@@ -1,6 +1,0 @@
-{
-  "name": "Daily Health Routine Dashboard",
-  "description": "A calm daily routine dashboard for meals, work, recovery, and wind-down.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
