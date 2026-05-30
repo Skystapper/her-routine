@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore, FormEvent, CSSProperties } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, FormEvent, CSSProperties } from "react";
 import styles from "./page.module.css";
 import PexelsImage from "./components/PexelsImage";
 import { TaskStatus, TaskKind, RoutineTask } from "./types";
@@ -202,6 +202,48 @@ const taskImageAlt: Record<TaskKind, string> = {
   private: "Private relaxation and pleasure reset routine",
 };
 
+// A distinct, descriptive Pexels search query per task id. Using per-task
+// queries (instead of per-kind) ensures similar tasks — e.g. breakfast vs
+// lunch vs dinner, or morning vs night call — never share the same image.
+const taskQuery: Record<string, string> = {
+  wake: "morning sunlight bedroom window stretch",
+  breakfast: "breakfast fruit bowl table morning",
+  "morning-call": "woman smiling phone call morning window",
+  "work-1": "creative desk laptop editing workspace",
+  lunch: "lunch rice greens plate healthy",
+  personal: "cozy relaxing self care afternoon",
+  nap: "afternoon nap sunlight bed rest",
+  "wake-afternoon": "splashing water face fresh wake",
+  "drink-reset": "coffee cup green plants windowsill",
+  "fresh-air": "outdoor cafe garden walk daylight",
+  "work-2": "notebook planning light desk evening",
+  movement: "yoga stretching mat home workout",
+  dinner: "dinner table warm cozy evening meal",
+  "personal-care": "skincare bathroom routine evening",
+  "night-call": "phone call night warm lamp light",
+  "wind-down": "candle calm music night relax",
+  sleep: "dark bedroom moonlight deep sleep",
+};
+
+// Fallback query per kind, used for custom tasks added at runtime.
+const kindQuery: Record<TaskKind, string> = {
+  morning: "morning sunlight window water",
+  meal: "healthy meal food plate",
+  work: "cozy desk laptop workspace",
+  rest: "calm cozy relaxing evening",
+  reset: "coffee plants window light",
+  sleep: "soft bed bedroom moonlight",
+  movement: "yoga stretching home",
+  outing: "garden cafe outdoor walk",
+  care: "skincare self care spa",
+  connection: "phone call cozy home",
+  private: "calm relaxing soft aesthetic",
+};
+
+function queryForTask(task: RoutineTask) {
+  return taskQuery[task.id] || kindQuery[task.kind];
+}
+
 let clockSnapshot = Date.now();
 
 function subscribeToMinute(callback: () => void) {
@@ -309,8 +351,16 @@ export default function App() {
   const [newTaskKind, setNewTaskKind] = useState<TaskKind>("work");
   const [newTaskPriority, setNewTaskPriority] = useState<"core" | "support" | "optional">("core");
 
-  // Constant list of beautiful background floating bubbles
-  const particles = useMemo(() => {
+  // Beautiful background floating bubbles. These are generated with Math.random(),
+  // so they must be created on the client only (after mount) to avoid a
+  // server/client hydration mismatch.
+  const [particles, setParticles] = useState<{ id: number; style: CSSProperties }[]>([]);
+
+  useEffect(() => {
+    setParticles(buildParticles());
+  }, []);
+
+  function buildParticles() {
     return Array.from({ length: 14 }).map((_, i) => {
       const size = Math.random() * 180 + 70;
       const left = Math.random() * 100;
@@ -343,7 +393,7 @@ export default function App() {
         } as CSSProperties,
       };
     });
-  }, []);
+  }
 
   function handleAddTask(e: FormEvent) {
     e.preventDefault();
@@ -460,7 +510,8 @@ export default function App() {
                 <section className={styles.livePanel} aria-label="Current routine task">
                   <div className={styles.liveImage}>
                     <PexelsImage
-                      kind={liveTask.kind}
+                      query={queryForTask(liveTask)}
+                      seed={liveTask.id}
                       alt={taskImageAlt[liveTask.kind]}
                       priority
                       className={styles.taskImage}
@@ -658,7 +709,8 @@ export default function App() {
                         <article className={`${styles.taskCard} ${overdue ? styles.overdue : ""}`} key={task.id}>
                           <div className={styles.thumb}>
                             <PexelsImage
-                              kind={task.kind}
+                              query={queryForTask(task)}
+                              seed={task.id}
                               alt={taskImageAlt[task.kind]}
                               className={styles.taskImage}
                             />

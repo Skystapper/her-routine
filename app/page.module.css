@@ -136,6 +136,8 @@
   filter: blur(8px);
   animation: floatAround var(--speed) ease-in-out infinite alternate;
   animation-delay: var(--delay);
+  will-change: transform, opacity;
+  transform: translateZ(0);
 }
 
 @keyframes floatAround {
@@ -599,6 +601,9 @@
   padding: 14px;
   border-left: 1px solid rgba(255, 255, 255, 0.62);
   border-radius: 24px;
+  /* Skip rendering work for off-screen cards while scrolling. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 160px;
 }
 
 .thumb {
@@ -824,6 +829,50 @@
   .cardActions input {
     width: 100%;
   }
+
+  /* --- Mobile scroll performance ---
+     backdrop-filter blur is extremely expensive to repaint while scrolling on
+     phones. Drop it on small screens and use a cheaper solid translucent
+     background that keeps the frosted look without the per-frame cost. */
+  .clockPanel,
+  .livePanel,
+  .metrics article,
+  .queuePanel,
+  .sidePanel section,
+  .taskCard,
+  .addFormContainer,
+  .navigationSelectorMobile {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .clockPanel,
+  .livePanel,
+  .metrics article,
+  .queuePanel,
+  .sidePanel section,
+  .taskCard {
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 10px 30px var(--shadow);
+  }
+
+  .nightTheme .clockPanel,
+  .nightTheme .livePanel,
+  .nightTheme .metrics article,
+  .nightTheme .queuePanel,
+  .nightTheme .sidePanel section,
+  .nightTheme .taskCard {
+    background: rgba(40, 32, 46, 0.9);
+  }
+
+  /* Fewer, lighter particles on mobile and no blur filter on them. */
+  .particle {
+    filter: none;
+  }
+
+  .particle:nth-child(n + 7) {
+    display: none;
+  }
 }
 
 /* Rounded, clean aesthetic Add Task Form styles */
@@ -1019,3 +1068,10 @@
   border: 1.5px solid var(--bg-base-mid);
 }
 
+/* Respect users who prefer less motion: stop the floating particles. */
+@media (prefers-reduced-motion: reduce) {
+  .particle {
+    animation: none;
+    opacity: 0.18;
+  }
+}
