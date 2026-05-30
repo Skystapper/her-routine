@@ -1,7 +1,8 @@
+"use client";
+
 import { useMemo, useState, useSyncExternalStore, FormEvent, CSSProperties } from "react";
-// @ts-expect-error - CSS modules aren't resolved strictly by tsc inside this sandbox
 import styles from "./page.module.css";
-import Image from "./components/Image";
+import PexelsImage from "./components/PexelsImage";
 import { TaskStatus, TaskKind, RoutineTask } from "./types";
 import { motion, AnimatePresence } from "motion/react";
 import { Compass, ListTodo, History, CheckCircle2, RotateCcw, AlertCircle, Ban, ArrowRight, Play, Check, Clock, CalendarDays } from "lucide-react";
@@ -14,7 +15,6 @@ const routineTemplate: RoutineTask[] = [
     end: "08:00",
     detail: "One full glass of water, open windows, gentle stretching.",
     kind: "morning",
-    image: "/routine-morning.png",
     priority: "core",
     status: "pending",
   },
@@ -25,7 +25,6 @@ const routineTemplate: RoutineTask[] = [
     end: "09:00",
     detail: "Iron-supportive meal with fruit like guava, orange, kiwi, or papaya.",
     kind: "meal",
-    image: "/routine-breakfast.png",
     priority: "core",
     status: "pending",
   },
@@ -36,7 +35,6 @@ const routineTemplate: RoutineTask[] = [
     end: "09:10",
     detail: "A low-pressure good morning connection while the day is still calm.",
     kind: "connection",
-    image: "/routine-call.png",
     priority: "support",
     status: "pending",
   },
@@ -47,7 +45,6 @@ const routineTemplate: RoutineTask[] = [
     end: "12:00",
     detail: "Focused work, five-minute breaks, water hourly, 20-20-20 eye care.",
     kind: "work",
-    image: "/routine-work-1.png",
     priority: "core",
     status: "pending",
   },
@@ -58,7 +55,6 @@ const routineTemplate: RoutineTask[] = [
     end: "13:00",
     detail: "Rice or grains, protein, greens, and lemon or lime. No coffee right after.",
     kind: "meal",
-    image: "/routine-lunch.png",
     priority: "core",
     status: "pending",
   },
@@ -69,7 +65,6 @@ const routineTemplate: RoutineTask[] = [
     end: "13:30",
     detail: "Private, relaxed, guilt-free time after lunch before the nap window.",
     kind: "private",
-    image: "/routine-private-reset.png",
     priority: "support",
     status: "pending",
   },
@@ -80,7 +75,6 @@ const routineTemplate: RoutineTask[] = [
     end: "15:00",
     detail: "Cool, dim, comfortable rest. Wake gently without rushing.",
     kind: "sleep",
-    image: "/routine-nap.png",
     priority: "core",
     status: "pending",
   },
@@ -91,7 +85,6 @@ const routineTemplate: RoutineTask[] = [
     end: "15:30",
     detail: "Water first, wash face, light movement, easy transition.",
     kind: "reset",
-    image: "/routine-wake-afternoon.png",
     priority: "support",
     status: "pending",
   },
@@ -102,7 +95,6 @@ const routineTemplate: RoutineTask[] = [
     end: "16:30",
     detail: "Caffeine is safely away from lunch. Add plants, fresh air, or a short outing.",
     kind: "reset",
-    image: "/routine-drink-reset.png",
     priority: "core",
     status: "pending",
   },
@@ -113,7 +105,6 @@ const routineTemplate: RoutineTask[] = [
     end: "17:30",
     detail: "A short walk, cafe stop, market look, photos, or anything that gets her outside.",
     kind: "outing",
-    image: "/routine-outing.png",
     priority: "optional",
     status: "pending",
   },
@@ -124,7 +115,6 @@ const routineTemplate: RoutineTask[] = [
     end: "18:00",
     detail: "Replies, planning, or one small edit only. Keep it light and bounded.",
     kind: "work",
-    image: "/routine-work-2.png",
     priority: "optional",
     status: "pending",
   },
@@ -135,7 +125,6 @@ const routineTemplate: RoutineTask[] = [
     end: "18:00",
     detail: "Walking, stretching, yoga, light dancing, or an easy workout. Low pressure counts.",
     kind: "movement",
-    image: "/routine-movement.png",
     priority: "support",
     status: "pending",
   },
@@ -146,7 +135,6 @@ const routineTemplate: RoutineTask[] = [
     end: "20:00",
     detail: "Comforting meal, lighter sodium, water or herbal drink.",
     kind: "meal",
-    image: "/routine-dinner.png",
     priority: "core",
     status: "pending",
   },
@@ -157,7 +145,6 @@ const routineTemplate: RoutineTask[] = [
     end: "21:15",
     detail: "Skincare, wash up, soft clothes, warm light, and no rushed energy.",
     kind: "care",
-    image: "/routine-personal-care.png",
     priority: "support",
     status: "pending",
   },
@@ -168,7 +155,6 @@ const routineTemplate: RoutineTask[] = [
     end: "22:00",
     detail: "Connection, comfort, affection, and light conversation without stressful topics.",
     kind: "connection",
-    image: "/routine-night-call.png",
     priority: "core",
     status: "pending",
   },
@@ -179,7 +165,6 @@ const routineTemplate: RoutineTask[] = [
     end: "23:00",
     detail: "Skincare, calm music, relaxed call, light videos, no stressful topics.",
     kind: "rest",
-    image: "/routine-wind-down.png",
     priority: "core",
     status: "pending",
   },
@@ -190,7 +175,6 @@ const routineTemplate: RoutineTask[] = [
     end: "07:30",
     detail: "Cool, dark, calm room. Protect the rhythm for tomorrow.",
     kind: "sleep",
-    image: "/routine-sleep.png",
     priority: "core",
     status: "pending",
   },
@@ -365,20 +349,6 @@ export default function App() {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
 
-    const kindImages: Record<TaskKind, string> = {
-      morning: "/routine-morning.png",
-      meal: "/routine-breakfast.png",
-      work: "/routine-work-1.png",
-      rest: "/routine-wind-down.png",
-      reset: "/routine-wake-afternoon.png",
-      sleep: "/routine-sleep.png",
-      movement: "/routine-movement.png",
-      outing: "/routine-outing.png",
-      care: "/routine-personal-care.png",
-      connection: "/routine-night-call.png",
-      private: "/routine-private-reset.png",
-    };
-
     const newTask: RoutineTask = {
       id: `custom-${Date.now()}`,
       title: newTaskTitle.trim(),
@@ -386,7 +356,6 @@ export default function App() {
       end: newTaskEnd,
       detail: newTaskDetail.trim() || `My scheduled ${newTaskKind} task.`,
       kind: newTaskKind,
-      image: kindImages[newTaskKind] || "/routine-work-1.png",
       priority: newTaskPriority,
       status: "pending",
     };
@@ -459,10 +428,7 @@ export default function App() {
           <div
             key={p.id}
             className={styles.particle}
-            style={{
-              ...p.style,
-              ["--delay" as any]: p.style["--delay" as any],
-            }}
+            style={p.style}
           />
         ))}
       </div>
@@ -493,14 +459,10 @@ export default function App() {
               <div className="space-y-6">
                 <section className={styles.livePanel} aria-label="Current routine task">
                   <div className={styles.liveImage}>
-                    <Image
-                      src={liveTask.image}
+                    <PexelsImage
+                      kind={liveTask.kind}
                       alt={taskImageAlt[liveTask.kind]}
-                      fill
                       priority
-                      quality={100}
-                      unoptimized
-                      sizes="(max-width: 900px) 100vw, 48vw"
                       className={styles.taskImage}
                     />
                   </div>
@@ -695,13 +657,9 @@ export default function App() {
                       return (
                         <article className={`${styles.taskCard} ${overdue ? styles.overdue : ""}`} key={task.id}>
                           <div className={styles.thumb}>
-                            <Image
-                              src={task.image}
-                              alt=""
-                              fill
-                              quality={95}
-                              unoptimized
-                              sizes="(max-width: 700px) 100vw, 150px"
+                            <PexelsImage
+                              kind={task.kind}
+                              alt={taskImageAlt[task.kind]}
                               className={styles.taskImage}
                             />
                           </div>

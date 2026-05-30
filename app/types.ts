@@ -20,7 +20,6 @@ export interface RoutineTask {
   end: string;
   detail: string;
   kind: TaskKind;
-  image: string;
   priority: "core" | "support" | "optional";
   status: TaskStatus;
 }
